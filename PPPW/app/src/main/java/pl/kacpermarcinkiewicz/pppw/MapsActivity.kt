@@ -38,6 +38,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
     }
 
     /**
@@ -159,7 +161,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             // ostatnia znana lokalizacja
             if (location != null) {
                 lastLocation = location
-                val currentLatLng = LatLng(location.latitude, location.longitude)
+                //val currentLatLng = LatLng(location.latitude, location.longitude)
             }
         }
 

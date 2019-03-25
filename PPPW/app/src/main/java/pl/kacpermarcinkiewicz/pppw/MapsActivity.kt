@@ -1,24 +1,33 @@
 package pl.kacpermarcinkiewicz.pppw
 
 import android.content.Intent
-import android.graphics.Bitmap
+import android.content.pm.PackageManager
+import android.content.res.Resources
+import android.location.Location
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v4.app.ActivityCompat
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptor
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
+import com.google.android.gms.tasks.Task
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    private lateinit var mMap: GoogleMap
+    companion object {
+        const val LOCATION_PERMISSION_REQUEST_CODE = 1
+    }
+
+    private lateinit var map: GoogleMap
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +36,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
     }
 
     /**
@@ -38,8 +49,33 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.
      */
+
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private lateinit var lastLocation: Location
+
     override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
+        map = googleMap
+
+        val actionBar = supportActionBar
+
+        actionBar!!.title = ""
+
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            val success = googleMap.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    this, R.raw.map_style_1
+                )
+            )
+
+            if (!success) {
+                Log.e("Mapa", "Style parsing failed.")
+            }
+        } catch (e: Resources.NotFoundException) {
+            Log.e("Mapa", "Can't find style. Error: ", e)
+        }
 
         val zste = LatLng(49.97307239745034, 19.836487258575385)
         val tesco = LatLng(49.97331729856471, 19.830607184950175)
@@ -48,24 +84,33 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val zoomLevel = 15.0f //This goes up to 21
 
         if (MainActivity.place == "1"){
-            mMap.addMarker(MarkerOptions().position(zste).title("Szkoła"))
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(zste, zoomLevel))
+            map.addMarker(MarkerOptions().position(zste).title("Szkoła"))
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(zste, zoomLevel))
         }
         else if (MainActivity.place == "2"){
-            mMap.addMarker(MarkerOptions().position(tesco).title("Tesco"))
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(tesco, zoomLevel))
+            map.addMarker(MarkerOptions().position(tesco).title("Tesco"))
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(tesco, zoomLevel))
         }
         else if (MainActivity.place == "3"){
-            mMap.addMarker(MarkerOptions().position(lewiatan).title("Lewiatan"))
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lewiatan, zoomLevel))
+            map.addMarker(MarkerOptions().position(lewiatan).title("Lewiatan"))
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(lewiatan, zoomLevel))
         }
         else if (MainActivity.place == "all"){
-            mMap.addMarker(MarkerOptions().position(zste).title("Szkoła"))
-            mMap.addMarker(MarkerOptions().position(tesco).title("Tesco"))
-            mMap.addMarker(MarkerOptions().position(lewiatan).title("Lewiatan"))
+            map.addMarker(MarkerOptions().position(zste).title("Szkoła"))
+            map.addMarker(MarkerOptions().position(tesco).title("Tesco"))
+            map.addMarker(MarkerOptions().position(lewiatan).title("Lewiatan"))
 
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(zste, zoomLevel))
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(zste, zoomLevel))
         }
+        else if (MainActivity.place == "near"){
+            map.addMarker(MarkerOptions().position(zste).title("Szkoła"))
+            map.addMarker(MarkerOptions().position(tesco).title("Tesco"))
+            map.addMarker(MarkerOptions().position(lewiatan).title("Lewiatan"))
+
+            moveCameraToCurrent()
+        }
+
+        setUpMap()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -99,4 +144,45 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         startActivity(aktywnoscMapy)
     }
 
+
+    private fun setUpMap() {
+           if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),LOCATION_PERMISSION_REQUEST_CODE)
+
+                return
+            }
+
+        // lokalizacja usera
+        map.isMyLocationEnabled = true
+
+        fusedLocationClient.lastLocation.addOnSuccessListener(this) { location ->
+            // ostatnia znana lokalizacja
+            if (location != null) {
+                lastLocation = location
+                val currentLatLng = LatLng(location.latitude, location.longitude)
+            }
+        }
+
+    }
+
+    fun moveCameraToCurrent(){
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),LOCATION_PERMISSION_REQUEST_CODE)
+
+            return
+        }
+        map.isMyLocationEnabled = true
+
+// 2
+        fusedLocationClient.lastLocation.addOnSuccessListener(this) { location ->
+            // Got last known location. In some rare situations this can be null.
+            // 3
+            if (location != null) {
+                lastLocation = location
+                val currentLatLng = LatLng(location.latitude, location.longitude)
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 13f))
+            }
+        }
+
+    }
 }

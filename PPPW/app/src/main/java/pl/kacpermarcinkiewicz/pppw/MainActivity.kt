@@ -74,6 +74,8 @@ class MainActivity : AppCompatActivity() {
                 // Do zrobienia zapisywanie zmiennej w pamięci telefonu
                 Toast.makeText(applicationContext,"Jeszcze niedostępne",Toast.LENGTH_LONG).show()
             }
+            val dialog: AlertDialog = builder.create()
+            dialog.show()
 
             return
         }

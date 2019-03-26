@@ -1,10 +1,12 @@
 package pl.kacpermarcinkiewicz.pppw
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
+import android.support.v7.app.AlertDialog
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -16,6 +18,8 @@ class MainActivity : AppCompatActivity() {
     companion object {
         var place = "1"
     }
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,17 +55,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun checkPerm() {
-        //Toast.makeText(applicationContext,"Aplikacja wymaga uprawnień lokalizacji do pełnej funkcjonalności",Toast.LENGTH_LONG)
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                MapsActivity.LOCATION_PERMISSION_REQUEST_CODE
-            )
+
+
+        if (ActivityCompat.checkSelfPermission(this,android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            //Popup
+            val builder = AlertDialog.Builder(this@MainActivity)
+            builder.setTitle("Uprawnienia do odczytu lokalizacji")
+            builder.setMessage("Do wykorzystania wszystkich możliwości aplikacji wymagane jest przyznanie uprawnień do lokalizacji.\nCzy chcesz teraz przyznać uprawnienia?")
+
+            builder.setPositiveButton("TAK"){dialog, which ->
+                ActivityCompat.requestPermissions(this,arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),MapsActivity.LOCATION_PERMISSION_REQUEST_CODE)
+            }
+            builder.setNegativeButton("NIE"){dialog, which ->
+                return@setNegativeButton
+            }
+            builder.setNeutralButton("Nie, zapamiętaj mój wybór"){dialog, which ->  
+                // Do zrobienia zapisywanie zmiennej w pamięci telefonu
+                Toast.makeText(applicationContext,"Jeszcze niedostępne",Toast.LENGTH_LONG).show()
+            }
 
             return
         }

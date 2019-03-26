@@ -19,6 +19,8 @@ class MainActivity : AppCompatActivity() {
         var place = "1"
     }
 
+    private var PRIVATE_MODE = 0
+    private val PREF_NAME = "GPSPermissionDenied"
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,6 +60,11 @@ class MainActivity : AppCompatActivity() {
 
 
         if (ActivityCompat.checkSelfPermission(this,android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            val sharedPref = getSharedPreferences(PREF_NAME, PRIVATE_MODE)
+            if (sharedPref.getString(PREF_NAME, "") == "denied"){
+                return
+            }
+
 
             //Popup
             val builder = AlertDialog.Builder(this@MainActivity)
@@ -70,9 +77,8 @@ class MainActivity : AppCompatActivity() {
             builder.setNegativeButton("NIE"){dialog, which ->
                 return@setNegativeButton
             }
-            builder.setNeutralButton("Nie, zapamiętaj mój wybór"){dialog, which ->  
-                // Do zrobienia zapisywanie zmiennej w pamięci telefonu
-                Toast.makeText(applicationContext,"Jeszcze niedostępne",Toast.LENGTH_LONG).show()
+            builder.setNeutralButton("Nie, zapamiętaj mój wybór"){dialog, which ->
+                areUSure()
             }
             val dialog: AlertDialog = builder.create()
             dialog.show()
@@ -81,9 +87,32 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun areUSure(){
+        val sharedPref = getSharedPreferences(PREF_NAME, PRIVATE_MODE)
+        val builder = AlertDialog.Builder(this@MainActivity)
+        builder.setTitle("UWAGA!")
+        builder.setMessage("Uwaga! Aby cofnąć tą opcje wymagane będzie ponowne zainstalowanie aplikacji!\n\nKontynuować? ")
+        builder.setPositiveButton("TAK"){dialog, which ->
+            val editor = sharedPref.edit()
+            editor.putString(PREF_NAME, "denied")
+            editor.apply()
+            if(sharedPref.getString(PREF_NAME, "") == "denied") {
+                Toast.makeText(applicationContext, "Zapamiętano", Toast.LENGTH_LONG).show()
+            }
+        }
+        builder.setNegativeButton("Anuluj"){dialog, which ->
+            Toast.makeText(applicationContext, "Anulowano", Toast.LENGTH_LONG).show()
+            return@setNegativeButton
+        }
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
+    }
+
     fun runMap(){
         var aktywnoscMapy = Intent(applicationContext, MapsActivity::class.java)
         startActivity(aktywnoscMapy)
+
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

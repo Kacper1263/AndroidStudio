@@ -11,9 +11,11 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import com.google.android.gms.tasks.Task
+import com.mapbox.android.core.permissions.PermissionsListener
+import com.mapbox.android.core.permissions.PermissionsManager
 import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), PermissionsListener {
 
     companion object {
         var place = "1"
@@ -21,6 +23,8 @@ class MainActivity : AppCompatActivity() {
 
     private var PRIVATE_MODE = 0
     private val PREF_NAME = "GPSPermissionDenied"
+
+    private var permissionsManager: PermissionsManager = PermissionsManager(this)
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,7 +76,9 @@ class MainActivity : AppCompatActivity() {
             builder.setMessage("Do wykorzystania wszystkich możliwości aplikacji wymagane jest przyznanie uprawnień do lokalizacji.\nCzy chcesz teraz przyznać uprawnienia?")
 
             builder.setPositiveButton("TAK"){dialog, which ->
-                ActivityCompat.requestPermissions(this,arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),MapsActivity.LOCATION_PERMISSION_REQUEST_CODE)
+                //ActivityCompat.requestPermissions(this,arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),MapsActivity.LOCATION_PERMISSION_REQUEST_CODE)
+                permissionsManager = PermissionsManager(this)
+                permissionsManager.requestLocationPermissions(this)
             }
             builder.setNegativeButton("NIE"){dialog, which ->
                 return@setNegativeButton
@@ -91,7 +97,7 @@ class MainActivity : AppCompatActivity() {
         val sharedPref = getSharedPreferences(PREF_NAME, PRIVATE_MODE)
         val builder = AlertDialog.Builder(this@MainActivity)
         builder.setTitle("UWAGA!")
-        builder.setMessage("Uwaga! Aby cofnąć tą opcje wymagane będzie ponowne zainstalowanie aplikacji!\n\nKontynuować? ")
+        builder.setMessage("Uwaga! Aby cofnąć tę opcję wymagane będzie ponowne zainstalowanie aplikacji!\n\nKontynuować? ")
         builder.setPositiveButton("TAK"){dialog, which ->
             val editor = sharedPref.edit()
             editor.putString(PREF_NAME, "denied")
@@ -139,5 +145,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onExplanationNeeded(permissionsToExplain: MutableList<String>?) {
+        //
+    }
+
+    override fun onPermissionResult(granted: Boolean) {
+        if (granted) {
+            Toast.makeText(this, "Pomyślnie przyznano uprawnienia", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(this, "Nie przyznano uprawnień!", Toast.LENGTH_LONG).show()
+        }
     }
 }

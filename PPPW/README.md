@@ -3,7 +3,7 @@ Przewodnik Po Powstaniu Warszawskim
 
 # Beta
 
-<b>Beta</b> - https://github.com/Kacper1263/AndroidStudio-Beta
+<b>Beta</b> - https://github.com/Kacper1263/AndroidStudio-Beta <br />
 <b>Beta-mapbox</b> - https://github.com/Kacper1263/AndroidStudio-Beta-mapbox
 
 ## Change log:
